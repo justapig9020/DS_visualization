@@ -2,6 +2,7 @@
 mod tests {
     use tokio_test::*;
     use super::*;
+    use std::matches;
 
     #[test]
     fn add_node() {
@@ -35,6 +36,15 @@ mod tests {
         let mut list = List::new();
         let got = list.remove(1);
         assert_err!(got);
+    }
+    #[test]
+    fn del_multi_node() {
+        let mut list = List::new();
+        list.insert_tail(1);
+        list.insert_tail(2);
+        let got = list.remove(2);
+        assert!(matches!(got, Ok(2)));
+        assert_eq!(list.len(), 1);
     }
 }
 
@@ -74,15 +84,23 @@ impl List {
     }
     pub fn remove(&mut self, val: i32) -> Result<i32, ()> {
         let mut ptr = &mut self.head;
-        while let Some(curr) = ptr {
-            if curr.val == val {
-                let ret = curr.val;
-                *ptr = curr.next.take();
-                self.size -= 1;
-                return Ok(ret);
+        loop {
+            match ptr {
+                Some(curr)
+                    if curr.val == val => {
+                    let ret = curr.val;
+                    *ptr = curr.next.take();
+                    self.size -= 1;
+                    return Ok(ret);
+                },
+                Some(curr) => {
+                    ptr = &mut curr.next;
+                },
+                None => {
+                    return Err(());
+                },
             }
         }
-        Err(())
     }
     pub fn len(&self) -> usize {
         self.size
