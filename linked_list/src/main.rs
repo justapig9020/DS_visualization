@@ -1,7 +1,9 @@
 mod linked_list;
 
 use linked_list::List;
-use std::io::{self, BufRead};
+use std::io::{self, BufRead, Write};
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
 
 #[cfg(test)]
 mod read_i32_test {
@@ -65,6 +67,8 @@ fn main() {
 fn shell(list: &mut List) {
     let stdin = io::stdin();
     loop {
+        print!("> ");
+        io::stdout().flush().unwrap();
         let input = stdin.lock();
         match read_cmd(input) {
             CMD::INS(val) => list.insert_tail(val),
@@ -82,10 +86,13 @@ fn shell(list: &mut List) {
 }
 
 fn do_help() {
-
+    println!("Help:");
+    for cmd in CMD::iter() {
+        println!("    {:?}", cmd);
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, EnumIter)]
 enum CMD {
     INS(i32),
     RM(i32),
@@ -118,7 +125,7 @@ where
     let mut num = String::new();
     loop {
         reader.read_line(&mut num).expect("Read line failed");
-        if let Ok(ret) = num.parse() {
+        if let Ok(ret) = num.trim().parse() {
             return ret;
         }
     }

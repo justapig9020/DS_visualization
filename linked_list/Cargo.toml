@@ -8,3 +8,5 @@ edition = "2018"
 
 [dependencies]
 tokio-test = "0.2.0-alpha.6"
+strum = "0.20.0"
+strum_macros = "0.20.0"
