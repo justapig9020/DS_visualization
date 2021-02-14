@@ -84,6 +84,8 @@ fn shell(list: &mut List) {
             CMD::HELP | CMD::NONE => do_help(),
             CMD::EXIT => break,
         }
+        let graph = list.gen_graph();
+        println!("{}", graph);
     }
 }
 
