@@ -2,19 +2,22 @@ mod linked_list;
 mod graphviz;
 
 use linked_list::List;
-use std::io::{self, BufRead, Write};
+use std::io::{self, BufRead, Write, BufReader, BufWriter, Stdin};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use graphviz::Graphviz;
+use clap::{App, Arg};
+use std::fs::File;
 
 #[cfg(test)]
 mod read_i32_test {
     use super::read_i32;
+    use std::io::{Cursor, BufRead};
 
     #[test]
     fn get_i32() {
-        let input = b"123";
-        let got = read_i32(&input[..]);
+        let mut input: Box<dyn BufRead> = Box::new(Cursor::new(b"123"));
+        let got = read_i32(&mut input);
         assert_eq!(got, 123);
     }
 }
@@ -22,57 +25,82 @@ mod read_i32_test {
 #[cfg(test)]
 mod read_cmd_test {
     use std::matches;
+    use std::io::{Cursor, BufRead};
     use super::{read_cmd, CMD};
 
     #[test]
     fn get_ins() {
-        let input = b"ins\n123";
-        let got = read_cmd(&input[..]);
+        let mut input: Box<dyn BufRead> = Box::new(Cursor::new(b"ins\n123"));
+        let got = read_cmd(&mut input);
         assert!(matches!(got, CMD::INS(123)), "Got: {:?}", got);
     }
     #[test]
     fn get_rm() {
-        let input = b"rm\n123";
-        let got = read_cmd(&input[..]);
+        let mut input: Box<dyn BufRead> = Box::new(Cursor::new(b"rm\n123"));
+        let got = read_cmd(&mut input);
         assert!(matches!(got, CMD::RM(123)), "Got: {:?}", got);
     }
     #[test]
     fn get_len() {
-        let input = b"len";
-        let got = read_cmd(&input[..]);
+        let mut input: Box<dyn BufRead> = Box::new(Cursor::new(b"len"));
+        let got = read_cmd(&mut input);
         assert!(matches!(got, CMD::LEN));
     }
     #[test]
     fn get_help() {
-        let input = b"help";
-        let got = read_cmd(&input[..]);
+        let mut input: Box<dyn BufRead> = Box::new(Cursor::new(b"help"));
+        let got = read_cmd(&mut input);
         assert!(matches!(got, CMD::HELP), "Got: {:?}", got);
     }
     #[test]
     fn get_none() {
-        let input = b"nothing";
-        let got = read_cmd(&input[..]);
+        let mut input: Box<dyn BufRead> = Box::new(Cursor::new(b"nothing"));
+        let got = read_cmd(&mut input);
         assert!(matches!(got, CMD::NONE), "Got: {:?}", got);
     }
     #[test]
     fn get_exit() {
-        let input = b"exit";
-        let got = read_cmd(&input[..]);
+        let mut input: Box<dyn BufRead> = Box::new(Cursor::new(b"exit"));
+        let got = read_cmd(&mut input);
         assert!(matches!(got, CMD::EXIT), "Got: {:?}", got);
     }
 }
 
 fn main() {
-    shell(&mut List::new());
+    let prog = App::new("LinkList")
+                    .arg(Arg::with_name("input")
+                            .help("input script")
+                            .short("i")
+                            .long("input")
+                            .takes_value(true))
+                    .arg(Arg::with_name("output")
+                            .help("output file")
+                            .short("o")
+                            .long("output")
+                            .takes_value(true))
+                    .get_matches();
+    let reader = get_input(prog.value_of("input"));
+    shell(&mut List::new(), reader);
 }
 
-fn shell(list: &mut List) {
-    let stdin = io::stdin();
+fn get_input(name: Option<&str>) -> Box<dyn BufRead> {
+    match name {
+        Some(file) => {
+            let f = File::open(file).expect("Open file failed");
+            Box::new(BufReader::new(f))
+        },
+        None => {
+            let stdin = io::stdin();
+            Box::new(BufReader::new(stdin))
+        },
+    }
+}
+
+fn shell(list: &mut List, mut input: Box<dyn BufRead>) {
     loop {
         print!("> ");
         io::stdout().flush().unwrap();
-        let input = stdin.lock();
-        match read_cmd(input) {
+        match read_cmd(&mut input) {
             CMD::INS(val) => list.insert_tail(val),
             CMD::RM(val) => {
                 match list.remove(val) {
@@ -106,12 +134,13 @@ enum CMD {
     EXIT,
 }
 
-fn read_cmd<R>(mut reader: R) -> CMD
-where
-    R: BufRead
-{
+fn read_cmd(reader: &mut Box<dyn BufRead>) -> CMD {
     let mut cmd = String::new();
-    reader.read_line(&mut cmd).expect("Read line failed");
+    let len = reader.read_line(&mut cmd).expect("Read line failed");
+    if len == 0 {
+        // got EOF
+        return CMD::EXIT;
+    }
     match cmd.trim() {
         "ins" => CMD::INS(read_i32(reader)),
         "rm"  => CMD::RM(read_i32(reader)),
@@ -122,10 +151,7 @@ where
     }
 }
 
-fn read_i32<R>(mut reader: R) -> i32
-where
-    R: BufRead
-{
+fn read_i32(reader: &mut Box<dyn BufRead>) -> i32 {
     let mut num = String::new();
     loop {
         reader.read_line(&mut num).expect("Read line failed");
