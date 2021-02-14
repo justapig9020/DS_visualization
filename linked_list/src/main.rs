@@ -1,9 +1,11 @@
 mod linked_list;
+mod graphviz;
 
 use linked_list::List;
 use std::io::{self, BufRead, Write};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
+use graphviz::Graphviz;
 
 #[cfg(test)]
 mod read_i32_test {
