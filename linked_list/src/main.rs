@@ -2,12 +2,12 @@ mod linked_list;
 mod graphviz;
 
 use linked_list::List;
-use std::io::{self, BufRead, Write, BufReader, BufWriter, Stdin};
+use std::io::{self, BufRead, BufReader, Write, BufWriter};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use graphviz::Graphviz;
 use clap::{App, Arg};
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 
 #[cfg(test)]
 mod read_i32_test {
@@ -80,13 +80,17 @@ fn main() {
                             .takes_value(true))
                     .get_matches();
     let reader = get_input(prog.value_of("input"));
-    shell(&mut List::new(), reader);
+    let writer = match prog.value_of("output") {
+        Some(name) => Some(name.to_string()),
+        None => None,
+    };
+    shell(&mut List::new(), reader, writer);
 }
 
 fn get_input(name: Option<&str>) -> Box<dyn BufRead> {
     match name {
         Some(file) => {
-            let f = File::open(file).expect("Open file failed");
+            let f = File::open(file).expect("Open input file failed");
             Box::new(BufReader::new(f))
         },
         None => {
@@ -96,7 +100,28 @@ fn get_input(name: Option<&str>) -> Box<dyn BufRead> {
     }
 }
 
-fn shell(list: &mut List, mut input: Box<dyn BufRead>) {
+fn get_output(name: &Option<String>, i: usize) -> Box<dyn Write> {
+    match name {
+        Some(file) => {
+            let mut name = file.clone();
+            name.push_str(&i.to_string());
+            name.push_str(".gv");
+            let f = OpenOptions::new()
+                        .write(true)
+                        .create(true)
+                        .open(&name)
+                        .expect("Open output file failed");
+            Box::new(BufWriter::new(f))
+        },
+        None => {
+            let stdout = io::stdout();
+            Box::new(BufWriter::new(stdout))
+        }
+    }
+}
+
+fn shell(list: &mut List, mut input: Box<dyn BufRead>, output: Option<String>) {
+    let mut i = 0;
     loop {
         print!("> ");
         io::stdout().flush().unwrap();
@@ -113,7 +138,9 @@ fn shell(list: &mut List, mut input: Box<dyn BufRead>) {
             CMD::EXIT => break,
         }
         let graph = list.gen_graph();
-        println!("{}", graph);
+        let mut out = get_output(&output, i);
+        i += 1;
+        out.write_fmt(format_args!("{}", graph)).expect("Write to file failed");
     }
 }
 
