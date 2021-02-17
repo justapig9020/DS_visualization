@@ -120,7 +120,14 @@ impl Node {
 
 impl Graphviz for Node {
     fn gen_graph(&self) -> String {
-        format!("node{} [label=\"{{<val>{} | <next>}}\"]\n", self.val, self.val)
+        let mut graph = format!("node{} [label=\"{{<val>{} | <next>}}\"]\n", self.val, self.val);
+        if let Some(next) = &self.next {
+            let edge = format!("node{}:next:c -> node{};\n", self.val, next.val);
+            graph.push_str(&edge);
+            let sub_graph = next.gen_graph();
+            graph.push_str(&sub_graph);
+        }
+        graph
     }
 }
 
@@ -171,24 +178,9 @@ impl Graphviz for List {
         graph += "node [shape=record];\n";
         graph += "edge [arrowtail=dot, dir=both, tailclip=false]\n";
         graph.push_str(&format!("len [label=\"Len | {}\"]\n", self.len()));
-        let mut ptr = &self.head;
-        let mut pre_node = None;
-        loop {
-            if let Some(curr) = ptr {
-                let node = curr.gen_graph();
-                let mut vec: Vec<&str> = node.splitn(2, " ").collect();
-                let curr_node = vec.remove(0);
-                let curr_node = curr_node.to_string();
-                if let Some(last_node) = pre_node {
-                    graph.push_str(&format!("{}:next:c -> {};\n", last_node, curr_node));
-                }
-                pre_node = Some(curr_node);
-                //pre_node = Some(last_node);
-                graph.push_str(&node);
-                ptr = &curr.next;
-            } else {
-                break;
-            }
+        if let Some(curr) = &self.head {
+            let nodes = curr.gen_graph();
+            graph.push_str(&nodes);
         }
         graph += "}";
         graph
