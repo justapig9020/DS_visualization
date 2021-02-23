@@ -1,3 +1,6 @@
 tags
 Cargo.lock
 target/
+.DS_Store
+*.gv
+*.jpg
