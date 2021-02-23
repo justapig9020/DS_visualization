@@ -7,7 +7,7 @@ mod tests {
     use std::matches;
 
     #[test]
-    fn add_node() {
+    fn insert_tail() {
         let mut list = List::new();
         list.insert_tail(1);
         assert_eq!(list.size, 1);
@@ -15,7 +15,7 @@ mod tests {
         assert_eq!(node.val, 1);
     }
     #[test]
-    fn add_multi_nodes() {
+    fn insert_tail_multi() {
         let mut list = List::new();
         list.insert_tail(1);
         list.insert_tail(2);
@@ -26,7 +26,26 @@ mod tests {
         assert_eq!(node.val, 2);
     }
     #[test]
-    fn del_exist_node() {
+    fn insert_head() {
+        let mut list = List::new();
+        list.insert_head(1);
+        assert_eq!(list.size, 1);
+        let node = list.head.unwrap();
+        assert_eq!(node.val, 1);
+    }
+    #[test]
+    fn insert_head_multi() {
+        let mut list = List::new();
+        list.insert_head(2);
+        list.insert_head(1);
+        assert_eq!(list.size, 2);
+        let node = list.head.unwrap();
+        assert_eq!(node.val, 1);
+        let node = node.next.unwrap();
+        assert_eq!(node.val, 2);
+    }
+    #[test]
+    fn remove_exist() {
         let mut list = List::new();
         list.insert_tail(1);
         let got = list.remove(1);
@@ -34,19 +53,57 @@ mod tests {
         assert_eq!(got.unwrap(), 1);
     }
     #[test]
-    fn del_not_exist_node() {
+    fn remove_not_exist() {
         let mut list = List::new();
         let got = list.remove(1);
         assert_err!(got);
     }
     #[test]
-    fn del_multi_node() {
+    fn remove_multi() {
         let mut list = List::new();
         list.insert_tail(1);
         list.insert_tail(2);
         let got = list.remove(2);
         assert!(matches!(got, Ok(2)));
         assert_eq!(list.len(), 1);
+    }
+    #[test]
+    fn list() {
+        let mut list = List::new();
+        list.insert_tail(1);
+        list.insert_tail(2);
+        list.insert_tail(3);
+        list.insert_tail(4);
+        list.insert_tail(5);
+        let got = list.list();
+        assert_eq!(got, vec![1, 2, 3, 4, 5]);
+    }
+    #[test]
+    fn find_mid_odd() {
+        let mut list = List::new();
+        list.insert_tail(1);
+        list.insert_tail(2);
+        list.insert_tail(3);
+        list.insert_tail(4);
+        list.insert_tail(5);
+        let got = list.find_mid();
+        assert!(matches!(got, Ok(3)));
+    }
+    #[test]
+    fn find_mid_even() {
+        let mut list = List::new();
+        list.insert_tail(1);
+        list.insert_tail(2);
+        list.insert_tail(3);
+        list.insert_tail(4);
+        let got = list.find_mid();
+        assert!(matches!(got, Ok(2)));
+    }
+    #[test]
+    fn find_mid_empty() {
+        let list = List::new();
+        let got = list.find_mid();
+        assert!(matches!(got, Err(())));
     }
     #[test]
     fn gen_no_node_graph() {
@@ -116,6 +173,13 @@ impl Node {
             next: None,
         }
     }
+    fn forward(ptr: &Option<Box<Node>>) -> &Option<Box<Node>>{
+        if let Some(curr) = ptr {
+            &curr.next
+        } else {
+            ptr
+        }
+    }
 }
 
 impl Graphviz for Node {
@@ -146,6 +210,12 @@ impl List {
         *ptr = Some(Box::new(Node::new(val)));
         self.size += 1;
     }
+    pub fn insert_head(&mut self, val: i32) {
+        let mut node = Box::new(Node::new(val));
+        node.next = self.head.take();
+        self.head = Some(node);
+        self.size += 1;
+    }
     pub fn remove(&mut self, val: i32) -> Result<i32, ()> {
         let mut ptr = &mut self.head;
         loop {
@@ -164,6 +234,32 @@ impl List {
                     return Err(());
                 },
             }
+        }
+    }
+    pub fn list(&self) -> Vec<i32> {
+        let mut ret = Vec::with_capacity(self.size);
+        let mut ptr = &self.head;
+        while let Some(curr) = ptr {
+            ret.push(curr.val);
+            ptr = &curr.next;
+        }
+        ret
+    }
+    pub fn find_mid(&self) -> Result<i32, ()> {
+        let mut faster = &self.head;
+        let mut slower = &self.head;
+        loop {
+            faster = Node::forward(faster);
+            faster = Node::forward(faster);
+            if faster.is_none() {
+                break;
+            }
+            slower = Node::forward(slower);
+        }
+        if let Some(slow) = slower {
+            Ok(slow.val)
+        } else {
+            Err(())
         }
     }
     pub fn len(&self) -> usize {
