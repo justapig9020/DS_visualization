@@ -181,11 +181,9 @@ pub fn interactive(mut inter: Interactor, input: Option<&str>, output: Option<&s
         let words = to_words(line.as_str());
         if let Err(_) = inter.handle_cmd(words) {
         }
-        /*
         let graph = inter.gen_graph();
-        let graph = graph.parse();
+        //let graph = graph.parse();
         output.write_graph(graph);
-        */
     }
 }
 
@@ -275,7 +273,7 @@ enum HandlerErr {
 }
 
 impl <'m> Interactor <'m> {
-    fn new(manager: &'m mut dyn Management) -> Self {
+    pub fn new(manager: &'m mut dyn Management) -> Self {
         Self {
             manager,
         }
