@@ -158,18 +158,6 @@ mod misc_test {
     }
 }
 
-fn fetch(input: &mut Box<dyn BufRead>) -> Result<String, ()> {
-    let mut line = String::new();
-    let len = input
-                .read_line(&mut line)
-                .expect("Read line failed");
-    if len == 0 {
-        // EOF
-        return Err(());
-    }
-    Ok(line)
-}
-
 pub fn interactive(mut inter: Interactor, input: Option<&str>, output: Option<&str>) {
     let mut input = get_input(input);
     let mut output = Outputer::new(output);
@@ -186,7 +174,11 @@ pub fn interactive(mut inter: Interactor, input: Option<&str>, output: Option<&s
         }
         let line = line.unwrap();
         let words = to_words(line.as_str());
-        if let Err(_) = inter.handle_cmd(words) {
+        if let Err(e) = inter.handle_cmd(words) {
+            println!("{:?}", e);
+            if let HandlerErr::Exit = e {
+                break;
+            }
         }
         let graph = inter.gen_graph();
         //let graph = graph.parse();
@@ -205,6 +197,18 @@ fn get_input(name: Option<&str>) -> Box<dyn BufRead> {
             Box::new(BufReader::new(stdin))
         }
     }
+}
+
+fn fetch(input: &mut Box<dyn BufRead>) -> Result<String, ()> {
+    let mut line = String::new();
+    let len = input
+                .read_line(&mut line)
+                .expect("Read line failed");
+    if len == 0 {
+        // EOF
+        return Err(());
+    }
+    Ok(line)
 }
 
 struct Outputer <'s> {
@@ -260,8 +264,10 @@ fn get_output(name: &Option<&str>, i: usize) -> Box<dyn Write> {
 fn to_words<'s, 'v> (s: &'s str) -> Vec<&'v str>
     where 's: 'v
 {
-    let iter = s.split(' ');
-    iter.collect()
+    let split = s.split(' ');
+    split.into_iter()
+        .map(|s| s.trim())
+        .collect()
 }
 
 pub trait Management {
@@ -273,6 +279,7 @@ pub struct Interactor<'m> {
     manager: &'m mut dyn Management,
 }
 
+#[derive(Debug)]
 enum HandlerErr {
     ArgLack,
     Exit,
