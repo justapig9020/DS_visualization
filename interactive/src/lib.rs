@@ -177,7 +177,14 @@ pub fn interactive(mut inter: Interactor, input: Option<&str>, output: Option<&s
     if let Err(e) = got {
         panic!("Create directory failed: {}", e);
     }
-    while let Ok(line) = fetch(&mut input) {
+    loop {
+        print!("> ");
+        io::stdout().flush().expect("Flush stdout failed");
+        let line = fetch(&mut input);
+        if line.is_err() {
+            break;
+        }
+        let line = line.unwrap();
         let words = to_words(line.as_str());
         if let Err(_) = inter.handle_cmd(words) {
         }
