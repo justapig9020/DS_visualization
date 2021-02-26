@@ -76,7 +76,6 @@ fn do_help() -> bool{
 impl Management for LinkedListManager {
     fn assign_job(&mut self, cmd: &str, args: &[&str]) -> bool {
         let list = &mut self.list;
-        println!("Got cmd: {}", cmd);
         let ret = match cmd {
             "it" => do_insert_tail(list, args),
             "ih" => do_insert_head(list, args),
@@ -84,10 +83,6 @@ impl Management for LinkedListManager {
             "help" => do_help(),
             _ => false,
         };
-        let vals = self.list.list();
-        for v in vals {
-            println!("{}", v);
-        }
         ret
     }
     fn gen_graph(&self) -> String {
