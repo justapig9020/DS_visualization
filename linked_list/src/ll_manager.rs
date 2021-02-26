@@ -68,7 +68,10 @@ fn do_remove(list: &mut List, args: &[&str]) -> bool {
 }
 
 fn do_help() -> bool{
-    println!("Help");
+    println!("COMMAND:");
+    println!("\tit [i32]");
+    println!("\tih [i32]");
+    println!("\trm [i32]");
     true
 }
 
