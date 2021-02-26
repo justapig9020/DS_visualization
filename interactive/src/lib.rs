@@ -175,10 +175,10 @@ pub fn interactive(mut inter: Interactor, input: Option<&str>, output: Option<&s
         let line = line.unwrap();
         let words = to_words(&line);
         if let Err(e) = inter.handle_cmd(words) {
-            println!("{:?}", e);
             if let HandlerErr::Exit = e {
                 break;
             }
+            continue;
         }
         let graph = inter.gen_graph();
         //let graph = graph.parse();
