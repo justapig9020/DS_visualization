@@ -4,12 +4,7 @@ mod ll_manager;
 
 use interactive::{Interactor, Management, interactive};
 use ll_manager::LinkedListManager;
-use linked_list::List;
-use strum::IntoEnumIterator;
-use strum_macros::EnumIter;
-use graphviz::Graphviz;
 use clap::{App, Arg};
-use std::fs::{File, OpenOptions};
 
 fn main() {
     let prog = App::new("LinkList")

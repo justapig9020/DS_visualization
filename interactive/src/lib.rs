@@ -1,5 +1,5 @@
-use std::io::{self, BufRead, BufReader, BufWriter, Write, Error};
-use std::fs::{self, File, create_dir_all, OpenOptions};
+use std::io::{self, BufRead, BufReader, BufWriter, Write};
+use std::fs::{self, File, OpenOptions};
 
 #[cfg(test)]
 mod misc_test {
