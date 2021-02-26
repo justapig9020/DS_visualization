@@ -1,5 +1,6 @@
 use std::io::{self, BufRead, BufReader, BufWriter, Write};
 use std::fs::{self, File, OpenOptions};
+use std::process::Command;
 
 #[cfg(test)]
 mod misc_test {
@@ -231,13 +232,24 @@ impl <'s> Outputer <'s> {
         Ok(())
     }
     fn write_graph(&mut self, graph: String) {
-        let mut output = get_output(&self.name, self.cnt);
+        let (mut output, name) = get_output(&self.name, self.cnt);
         self.cnt += 1;
         output.write_fmt(format_args!("{}", graph)).expect("Write to file failed");
+        drop(output);
+        if let Some(name) = name {
+            let outfile = format!("{}.jpg", name);
+            Command::new("dot")
+                    .arg("-Tjpg")
+                    .arg(name.as_str())
+                    .arg("-o")
+                    .arg(outfile.as_str())
+                    .output()
+                    .expect("Generate graph failed");
+        }
     }
 }
 
-fn get_output(name: &Option<&str>, i: usize) -> Box<dyn Write> {
+fn get_output(name: &Option<&str>, i: usize) -> (Box<dyn Write>, Option<String>) {
     match name {
         Some(file) => {
             /*
@@ -251,11 +263,11 @@ fn get_output(name: &Option<&str>, i: usize) -> Box<dyn Write> {
                         .create(true)
                         .open(&name)
                         .expect("Open output file failed");
-            Box::new(BufWriter::new(f))
+            (Box::new(BufWriter::new(f)), Some(name))
         },
         None => {
             let stdout = io::stdout();
-            Box::new(BufWriter::new(stdout))
+            (Box::new(BufWriter::new(stdout)), None)
         }
     }
 }
