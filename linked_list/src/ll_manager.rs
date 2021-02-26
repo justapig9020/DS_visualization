@@ -1,5 +1,6 @@
 use crate::linked_list::List;
 use interactive::Management;
+use crate::graphviz::Graphviz;
 
 pub struct LinkedListManager {
     list: List,
@@ -90,6 +91,6 @@ impl Management for LinkedListManager {
         ret
     }
     fn gen_graph(&self) -> String {
-        String::from("")
+        self.list.gen_graph()
     }
 }
