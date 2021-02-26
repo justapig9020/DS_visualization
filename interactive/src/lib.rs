@@ -11,7 +11,7 @@ mod misc_test {
     #[test]
     fn to_words_single() {
         let test = String::from("first");
-        let got = to_words(test.as_str());
+        let got = to_words(&test);
         let expect = vec!["first"];
         assert_eq!(got.len(), 1);
         assert_eq!(got, expect);
@@ -19,7 +19,7 @@ mod misc_test {
     #[test]
     fn to_words_multi() {
         let test = String::from("first second third forth");
-        let got = to_words(test.as_str());
+        let got = to_words(&test);
         let expect = vec!["first", "second", "third", "forth"];
         assert_eq!(got.len(), 4);
         assert_eq!(got, expect);
@@ -173,7 +173,7 @@ pub fn interactive(mut inter: Interactor, input: Option<&str>, output: Option<&s
             break;
         }
         let line = line.unwrap();
-        let words = to_words(line.as_str());
+        let words = to_words(&line);
         if let Err(e) = inter.handle_cmd(words) {
             println!("{:?}", e);
             if let HandlerErr::Exit = e {
@@ -261,9 +261,7 @@ fn get_output(name: &Option<&str>, i: usize) -> Box<dyn Write> {
 }
 
 
-fn to_words<'s, 'v> (s: &'s str) -> Vec<&'v str>
-    where 's: 'v
-{
+fn to_words(s: &String) -> Vec<&str> {
     let split = s.split(' ');
     split.into_iter()
         .map(|s| s.trim())
